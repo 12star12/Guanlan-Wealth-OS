@@ -68,6 +68,11 @@
         </div>
       </div>
 
+      <div class="gains-line" id="gains-line" hidden>
+        <span class="k">本 月 换 来 了</span>
+        <span class="v" id="gains-text"></span>
+      </div>
+
       <div class="quote" id="quote" hidden>
         <svg class="art" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.4"
              stroke-linecap="round" stroke-linejoin="round" style="color:#8C8477">
@@ -163,6 +168,17 @@
         <div class="add-actions">
           <button class="btn" id="btn-add">记 下</button>
           <span class="msg" id="msg"></span>
+        </div>
+
+        <!-- 回执：记完之后跟人说的那句话 -->
+        <div class="receipt" id="receipt" hidden>
+          <div class="r-top">
+            <span class="r-badge" id="r-badge"></span>
+            <span class="r-amt" id="r-amt"></span>
+          </div>
+          <div class="r-kicker" id="r-kicker" hidden>换 来 了</div>
+          <div class="r-title" id="r-title" hidden></div>
+          <div class="r-body" id="r-body"></div>
         </div>
 
         <div class="sec-title" id="recent-add-title" hidden>

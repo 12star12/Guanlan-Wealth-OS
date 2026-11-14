@@ -2,6 +2,7 @@
 
 const ledger = require('./ledger');
 const { pickQuote } = require('./quotes');
+const gains = require('./gains');
 
 /**
  * 看板组装 —— 纯函数，不依赖 Electron
@@ -98,10 +99,15 @@ function buildDashboard({ accounts, transactions, now = new Date() }) {
       .map((t) => t.at.slice(0, 10))
   ).size;
 
+  // 本月换来了什么 —— 首页不该只有钱的数字
+  const gainList = gains.bucketGains(accounts, transactions, from, to, cf.outflow);
+
   return {
     netWorth,
     runway,
     debtRatio,
+    gains: gainList,
+    gainsLine: gainList.slice(0, 5).map((g) => g.label).join(' · '),
     savingsRate,
     inflow: cf.inflow,
     outflow: cf.outflow,

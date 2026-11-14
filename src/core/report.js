@@ -12,6 +12,7 @@
  */
 
 const ledger = require('./ledger');
+const gains = require('./gains');
 
 const pad2 = (n) => String(n).padStart(2, '0');
 
@@ -157,23 +158,78 @@ function largestExpenses(accounts, transactions, from, to, n = 3) {
 }
 
 /**
+ * 成长投入的纵向统计
+ *
+ * 这是财报里唯一「跨月」的一节。理由：单笔的学习支出没有意义，
+ * 累积起来才有。所以这里回答的不是「这个月花了多少」，
+ * 而是「这件事你做了多久」。
+ */
+function growthStats(accounts, transactions, from, to, monthTotalExpense) {
+  const growthIds = new Set(
+    accounts.filter((a) => a.type === 'expense' && a.nature === 'growth').map((a) => a.id)
+  );
+  if (!growthIds.size) return null;
+
+  let allCount = 0;
+  let allTotal = 0;
+  let firstAt = null;
+  let monthCount = 0;
+  let monthTotal = 0;
+
+  for (const tx of transactions) {
+    if (tx.kind === 'opening') continue;
+    for (const e of tx.entries || []) {
+      if (!growthIds.has(e.accountId) || e.amount <= 0) continue;
+      allCount += 1;
+      allTotal += e.amount;
+      if (!firstAt || tx.at < firstAt) firstAt = tx.at;
+      if (tx.at >= from && tx.at < to) {
+        monthCount += 1;
+        monthTotal += e.amount;
+      }
+    }
+  }
+
+  const ref = new Date(`${to}T00:00:00`);
+  const first = firstAt ? new Date(`${firstAt.slice(0, 10)}T00:00:00`) : null;
+  const days = first ? Math.max(0, Math.round((ref - first) / 86400000)) : null;
+
+  return {
+    monthCount,
+    monthTotal,
+    monthShare: monthTotalExpense > 0 ? monthTotal / monthTotalExpense : 0,
+    allCount,
+    allTotal,
+    firstAt: firstAt ? firstAt.slice(0, 10) : null,
+    daysSinceFirst: days,
+  };
+}
+
+/**
  * 结语 —— 纯规则拼装，不接 AI
  * 只陈述事实，不做评价。这是财报，不是鼓励信。
  */
 function narration(r) {
   const bits = [];
 
-  if (r.delta.netWorth > 0) {
-    bits.push(`本月净资产增加 ¥${(r.delta.netWorth / 100).toFixed(0)}，与本月的结余方向一致。`);
-  } else if (r.delta.netWorth < 0) {
-    bits.push(`本月净资产减少 ¥${(-r.delta.netWorth / 100).toFixed(0)}，需要看是支出上升还是资产价格波动。`);
-  } else {
-    bits.push('本月净资产与上月持平。');
+  // 先讲换来了什么：这是这份产品真正想让用户看见的东西
+  if (r.gains && r.gains.length) {
+    const labels = r.gains.slice(0, 4).map((g) => g.label);
+    const more = r.gains.length > 4 ? '等' : '';
+    const top = r.gains[0];
+    bits.push(
+      `这个月你的钱换来了 ${r.gains.length} 样东西：${labels.join('、')}${more}。`
+      + `比重最大的是${top.label}，占 ${(top.share * 100).toFixed(0)}%。`
+    );
   }
 
-  const livingShare = r.nature.living / (r.totalExpense || 1);
-  if (r.totalExpense > 0) {
-    bits.push(`生活开支占总支出的 ${(livingShare * 100).toFixed(0)}%，成长投入 ${(r.nature.growth / 100).toFixed(0)} 元。`);
+  // 再说钱了本身
+  if (r.delta.netWorth > 0) {
+    bits.push(`净资产比上月增加 ¥${(r.delta.netWorth / 100).toFixed(0)}。`);
+  } else if (r.delta.netWorth < 0) {
+    bits.push(`净资产比上月减少 ¥${(-r.delta.netWorth / 100).toFixed(0)}。`);
+  } else {
+    bits.push('净资产与上月持平。');
   }
 
   if (r.runway !== null) {
@@ -258,6 +314,9 @@ function buildMonthlyReport({ accounts, transactions, year, month }) {
       totalExpense: totalExpense - prevExpense,
       net: net - (prevIncome - prevExpense),
     },
+
+    gains: gains.bucketGains(accounts, transactions, from, to, totalExpense),
+    growth: growthStats(accounts, transactions, from, to, totalExpense),
 
     largest: largestExpenses(accounts, transactions, from, to, 3),
     txnCount: inMonth.length,

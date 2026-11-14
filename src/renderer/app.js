@@ -146,6 +146,13 @@ async function loadDashboard() {
     $('quote').hidden = false;
   }
 
+  if (d.gainsLine) {
+    $('gains-line').hidden = false;
+    $('gains-text').textContent = d.gainsLine;
+  } else {
+    $('gains-line').hidden = true;
+  }
+
   $('days-stamp').textContent = `本月已记 ${d.daysRecorded} 天`;
   $('ledger-sub').textContent = `本月 · 收入 ¥${money(d.inflow)}　支出 ¥${money(d.outflow)}`;
 
@@ -461,8 +468,11 @@ async function submit() {
 
   recentAdded.unshift(r.tx);
   renderRecentAdded();
+  renderReceipt(r.receipt);
 
-  setMsg(`已记下 · 净资产 ¥${money(r.netWorth)}`, 'ok');
+  // 不再单独报一句「净资产 ¥…」：回执本身就是回执，
+  // 把钱的数字摆在收获前面，目光就又跑回钱上了。
+  setMsg('', '');
 
   // 清掉金额和备注，表单其余部分保留；下次开始输入时解析结果可以重新覆盖
   form.amount = null;
@@ -474,6 +484,28 @@ async function submit() {
 
   await loadDashboard();
   if (!$('view-list').hidden) await loadList();
+}
+
+/** 回执卡：主语是「换来了什么」，金额是脚注 */
+function renderReceipt(rec) {
+  const box = $('receipt');
+  if (!rec) { box.hidden = true; return; }
+
+  box.hidden = false;
+  box.dataset.tone = rec.tone || 'plain';
+
+  $('r-badge').textContent = rec.badge;
+  $('r-amt').textContent = (rec.tone === 'income' ? '+ ' : '') + '¥' + money(rec.amount);
+  $('r-amt').className = 'r-amt' + (rec.tone === 'income' ? ' in' : '');
+
+  const hasTitle = !!rec.title;
+  $('r-kicker').hidden = !hasTitle;
+  $('r-title').hidden = !hasTitle;
+  if (hasTitle) $('r-title').textContent = rec.title;
+
+  $('r-body').innerHTML = rec.lines
+    .map((l, i) => `<div class="r-l${i ? ' dim' : ''}">${esc(l)}</div>`)
+    .join('');
 }
 
 function renderRecentAdded() {
@@ -563,21 +595,25 @@ function renderReport(r) {
     ? r.expense.map((x) => `<tr><td>${esc(x.name)}</td><td class="n">${money(x.amount)}</td></tr>`).join('')
     : '<tr><td class="nil">本月没有支出记录</td><td class="n">—</td></tr>';
 
-  const natureDefs = [
-    { k: 'living', label: '生活' },
-    { k: 'growth', label: '成长' },
-    { k: 'leisure', label: '娱乐' },
-    { k: 'other', label: '其他' },
-  ].filter((n) => (r.nature[n.k] || 0) > 0);
   const total = r.totalExpense || 0;
-  const bars = natureDefs.map((n) => {
-    const v = r.nature[n.k] || 0;
-    const p = total > 0 ? Math.round((v / total) * 100) : 0;
-    return `<div class="bar-row">
-      <span class="bl">${n.label}</span>
+
+  // 这个月换来了什么 —— 财报的第二主角，排在收支明细之前
+  const gains = r.gains || [];
+  const growthInfo = r.growth;
+  const gainRows = gains.map((g) => {
+    const p = Math.round(g.share * 100);
+    let note = `${g.count} 笔 · ${g.line}`;
+    if (g.label === '能力' && growthInfo && growthInfo.daysSinceFirst >= 60) {
+      note += ` 最早一次在 ${growthInfo.daysSinceFirst} 天前，至今 ${growthInfo.allCount} 次。`;
+    }
+    return `<div class="gain" data-label="${esc(g.label)}">
+      <div class="g-head">
+        <span class="g-label">${esc(g.label)}</span>
+        <span class="g-amt">¥${money(g.amount)}</span>
+        <span class="g-pct">${p}%</span>
+      </div>
       <div class="bar"><i style="width:${p}%"></i></div>
-      <span class="bn">¥${money(v)}</span>
-      <span class="bp">${p}%</span>
+      <div class="g-note">${esc(note)}</div>
     </div>`;
   }).join('');
 
@@ -654,7 +690,15 @@ function renderReport(r) {
     </section>
 
     <section class="rpt-sec">
-      <h3><i>二</i>本月收支</h3>
+      <h3><i>二</i>这个月换来了什么</h3>
+      ${total > 0
+        ? `<p class="lead">这个月，你的钱换来了 ${gains.length} 样东西。</p>
+           <div class="gains">${gainRows}</div>`
+        : '<p class="nil">本月没有支出记录。</p>'}
+    </section>
+
+    <section class="rpt-sec">
+      <h3><i>三</i>本月收支</h3>
       <div class="two-col">
         <table class="led">
           <thead><tr><th>收入来源</th><th class="n">金额</th></tr></thead>
@@ -667,11 +711,6 @@ function renderReport(r) {
           <tfoot><tr class="total"><td>支出合计</td><td class="n">${money(r.totalExpense)}</td></tr></tfoot>
         </table>
       </div>
-    </section>
-
-    <section class="rpt-sec">
-      <h3><i>三</i>支出结构</h3>
-      ${total > 0 ? `<div class="bars">${bars}</div>` : '<p class="nil">本月没有支出记录。</p>'}
       ${r.largest.length ? `
       <table class="led small">
         <thead><tr><th colspan="2">最大的几笔</th><th class="n">金额</th></tr></thead>

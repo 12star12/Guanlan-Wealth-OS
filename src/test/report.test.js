@@ -12,6 +12,8 @@ const ACCOUNTS = [
   { id: 'salary', name: '工资',   type: 'income'    },
   { id: 'food',   name: '餐饮',   type: 'expense',   nature: 'living' },
   { id: 'life',   name: '日用',   type: 'expense',   nature: 'living' },
+  { id: 'traffic',name: '交通',   type: 'expense',   nature: 'living' },
+  { id: 'fun',    name: '娱乐',   type: 'expense',   nature: 'leisure' },
   { id: 'growth', name: '成长',   type: 'expense',   nature: 'growth' },
 ];
 
@@ -139,4 +141,52 @@ test('结语只陈述事实，不含评价性词汇', () => {
   for (const w of banned) {
     assert.ok(!r.narration.includes(w), `结语不应出现「${w}」`);
   }
+});
+
+test('收获分组：钱变成了什么，而不是花在哪', () => {
+  const txs = [
+    tx('a', '2026-11-01T08:00:00', 'opening', [
+      { accountId: 'bank', amount: 5000000 }, { accountId: 'salary', amount: -5000000 },
+    ]),
+    tx('b', '2026-11-05T12:00:00', 'expense', [
+      { accountId: 'bank', amount: -350000 }, { accountId: 'life', amount: 350000 },
+    ], '房租'),
+    tx('c', '2026-11-08T12:00:00', 'expense', [
+      { accountId: 'bank', amount: -12000 }, { accountId: 'food', amount: 12000 },
+    ], '午饭'),
+    tx('d', '2026-11-10T12:00:00', 'expense', [
+      { accountId: 'bank', amount: -20000 }, { accountId: 'growth', amount: 20000 },
+    ], '买书'),
+    tx('e', '2026-11-12T12:00:00', 'expense', [
+      { accountId: 'bank', amount: -5000 }, { accountId: 'fun', amount: 5000 },
+    ], '电影'),
+  ];
+
+  const r = buildMonthlyReport({ accounts: ACCOUNTS, transactions: txs, year: 2026, month: 11 });
+  const labels = r.gains.map((g) => g.label);
+
+  assert.deepEqual(labels.sort(), ['力气', '心情', '安身', '能力'].sort());
+  assert.equal(r.gains[0].label, '安身', '房租金额最大，应排第一');
+  assert.equal(r.gains[0].line, '一整个月的落脚处。', '房租换来的东西要单独说');
+
+  const sum = r.gains.reduce((s, g) => s + g.amount, 0);
+  assert.equal(sum, r.totalExpense, '各收获之和应等于总支出');
+
+  const shareSum = r.gains.reduce((s, g) => s + g.share, 0);
+  assert.ok(Math.abs(shareSum - 1) < 1e-9);
+});
+
+test('结语先说换来了什么，再说钱', () => {
+  const txs = [
+    tx('a', '2026-11-01T08:00:00', 'opening', [
+      { accountId: 'bank', amount: 500000 }, { accountId: 'salary', amount: -500000 },
+    ]),
+    tx('b', '2026-11-05T12:00:00', 'expense', [
+      { accountId: 'bank', amount: -10000 }, { accountId: 'food', amount: 10000 },
+    ], '午饭'),
+  ];
+  const r = buildMonthlyReport({ accounts: ACCOUNTS, transactions: txs, year: 2026, month: 11 });
+
+  assert.ok(r.narration.startsWith('这个月你的钱换来了'), `实际：${r.narration}`);
+  assert.ok(r.narration.includes('力气'));
 });

@@ -9,6 +9,7 @@ const ledger = require('../core/ledger');
 const { parseQuick, toEntries } = require('../core/quickparse');
 const { buildDashboard, rowOf, sortDesc } = require('../core/dashboard');
 const report = require('../core/report');
+const feedback = require('../core/feedback');
 
 let store = null;
 let win = null;
@@ -249,11 +250,20 @@ ipcMain.handle('txn:add', (_e, payload) => {
 
   store.addTransaction(tx);
 
+  // 回执：记完之后跟人说的那句话，用事实而不是形容词
+  const receipt = feedback.assess({
+    tx,
+    accounts: store.accounts,
+    transactions: store.transactions,
+    now: new Date(),
+  });
+
   // 顺手把记完之后的净资产带回去，用户立刻能看到变化
   const balances = ledger.accountBalances(store.transactions);
   return {
     ok: true,
     tx: rowOf(tx, store.accounts),
+    receipt,
     netWorth: ledger.netWorth(store.accounts, balances),
   };
 });

@@ -463,3 +463,110 @@ p.nil{font-size:12.5px;color:var(--ink-3);letter-spacing:.06em}
 
 /* 「刚记下的」区块与按钮拉开距离 */
 #recent-add-title{margin-top:34px}
+
+/* ============================================================
+   记账回执
+   记完之后跟人说的那句话。不是弹窗，是要读的两行字。
+   ============================================================ */
+
+.receipt{
+  margin-top:20px;max-width:660px;
+  position:relative;
+  border:1px solid rgba(43,38,32,.15);
+  border-left:3px solid var(--ink-3);
+  background:linear-gradient(180deg,#FCF8EE,var(--paper));
+  padding:15px 20px 17px;
+  animation:receiptIn .28s ease-out;
+}
+@keyframes receiptIn{
+  from{opacity:0;transform:translateY(-4px)}
+  to{opacity:1;transform:none}
+}
+.receipt::after{
+  /* 撕口：底部一排小三角，像从票本上撕下来 */
+  content:"";position:absolute;left:0;right:0;bottom:-1px;height:5px;
+  background-image:linear-gradient(-45deg,transparent 50%,#F7F2E7 50%),
+                   linear-gradient(45deg,transparent 50%,#F7F2E7 50%);
+  background-size:8px 8px;background-position:0 0,4px 0;background-repeat:repeat-x;
+  pointer-events:none;
+}
+
+.receipt[data-tone="income"]{border-left-color:var(--gold)}
+.receipt[data-tone="growth"]{border-left-color:var(--green)}
+.receipt[data-tone="leisure"]{border-left-color:rgba(178,58,46,.55)}
+.receipt[data-tone="living"]{border-left-color:rgba(140,132,119,.75)}
+
+.receipt .r-top{
+  display:flex;align-items:baseline;justify-content:space-between;gap:18px;
+  padding-bottom:9px;border-bottom:1px dotted rgba(43,38,32,.18);
+}
+.receipt .r-badge{
+  font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--ink-3);
+}
+.receipt .r-amt{
+  font-family:var(--mono);font-size:17px;color:var(--ink-2);white-space:nowrap;
+}
+.receipt .r-amt.in{color:var(--gold)}
+
+.receipt .r-l{
+  margin-top:9px;font-size:13.5px;line-height:1.85;
+  letter-spacing:.05em;color:var(--ink);
+}
+.receipt .r-l.dim{color:var(--ink-3);font-size:12.5px;margin-top:3px}
+
+/* 回执里的「换来了」：这个词是回执的主语 */
+.receipt .r-kicker{
+  margin-top:13px;font-family:var(--mono);font-size:9.5px;
+  letter-spacing:.34em;color:var(--ink-3);
+}
+.receipt .r-title{
+  margin-top:5px;font-size:27px;letter-spacing:.2em;color:var(--ink);
+  line-height:1.15;text-indent:.2em;
+}
+
+/* ============================================================
+   财报 · 这个月换来了什么
+   ============================================================ */
+
+.rpt-sec .lead{
+  font-size:13px;letter-spacing:.08em;color:var(--ink-2);
+  margin-bottom:20px;
+}
+.gains{display:flex;flex-direction:column;gap:18px}
+.gain .g-head{display:flex;align-items:baseline;gap:14px}
+.gain .g-label{
+  flex:1;font-size:17px;letter-spacing:.18em;color:var(--ink);text-indent:.18em;
+}
+.gain .g-amt{font-family:var(--mono);font-size:12.5px;color:var(--ink)}
+.gain .g-pct{width:38px;text-align:right;font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.gain .bar{margin-top:9px;height:7px}
+.gain .g-note{
+  margin-top:6px;font-size:11.5px;letter-spacing:.04em;color:var(--ink-3);
+}
+
+.gain .bar i{background:linear-gradient(to right,rgba(140,132,119,.38),rgba(140,132,119,.7))}
+/* 颜色跟「收获」绑定，不跟排序绑定：能力永远是绿的 */
+.gain[data-label="能力"] .bar i{background:linear-gradient(to right,rgba(100,121,79,.45),rgba(100,121,79,.85))}
+.gain[data-label="安身"] .bar i{background:linear-gradient(to right,rgba(146,132,104,.38),rgba(146,132,104,.78))}
+.gain[data-label="力气"] .bar i{background:linear-gradient(to right,rgba(185,146,74,.42),rgba(185,146,74,.82))}
+.gain[data-label="心情"] .bar i{background:linear-gradient(to right,rgba(178,58,46,.3),rgba(178,58,46,.62))}
+.gain[data-label="抵达"] .bar i{background:linear-gradient(to right,rgba(92,118,148,.36),rgba(92,118,148,.7))}
+
+@media print{
+  .gain{break-inside:avoid}
+}
+
+/* 首页那一行：这个月的钱换来了什么 */
+.gains-line{
+  display:flex;align-items:baseline;gap:16px;
+  margin:-6px 0 26px;padding:11px 0 11px 14px;
+  border-left:2px solid rgba(100,121,79,.55);
+  background:linear-gradient(to right,rgba(100,121,79,.045),transparent 78%);
+}
+.gains-line .k{
+  flex:none;font-family:var(--mono);font-size:9.5px;
+  letter-spacing:.22em;color:var(--ink-3);
+}
+.gains-line .v{
+  font-size:14.5px;letter-spacing:.22em;color:var(--ink-2);
+}
