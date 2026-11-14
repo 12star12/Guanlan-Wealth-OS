@@ -57,8 +57,8 @@ const QUOTES = [
   },
   {
     text: '君子藏器于身，待时而动。',
-    author: '《周易》',
-    source: '系辞下',
+    author: '',
+    source: '《周易·系辞下》',
     tags: ['积累', '耐心'],
   },
 ];

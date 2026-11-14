@@ -8,9 +8,27 @@ const { Store } = require('./store');
 const ledger = require('../core/ledger');
 const { parseQuick, toEntries } = require('../core/quickparse');
 const { buildDashboard, rowOf, sortDesc } = require('../core/dashboard');
+const report = require('../core/report');
 
 let store = null;
 let win = null;
+
+// 截图调试时关掉 GPU 合成，避免抓到过时的画面帧
+if (process.env.GUANLAN_SHOT) app.disableHardwareAcceleration();
+
+/** 本地时间戳（YYYY-MM-DDTHH:mm:ss，不带时区）
+ *  统一用本地时间，避免 UTC 把凌晨记的账算到前一天 */
+function localISO(d) {
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+    + `T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
+/** "2026-11-14" → 该日中午的本地时间戳 */
+function dateAt(dateStr, hour = 12) {
+  const [y, m, d] = String(dateStr).split('-').map(Number);
+  return localISO(new Date(y, m - 1, d, hour, 0, 0));
+}
 
 /* ============================================================
    应用入口
@@ -19,7 +37,7 @@ let win = null;
 function createWindow() {
   win = new BrowserWindow({
     width: 1280,
-    height: 880,
+    height: Number(process.env.GUANLAN_H) || 880,
     minWidth: 1040,
     minHeight: 720,
     backgroundColor: '#DDD4C0',
@@ -37,10 +55,27 @@ function createWindow() {
   win.once('ready-to-show', () => win.show());
 
   // 调试用：设 GUANLAN_SHOT=<路径> 时，渲染完成后截图并退出
+  // 可选 GUANLAN_VIEW=add|report 先切到该页，GUANLAN_PRE=<js> 先执行一段脚本
   if (process.env.GUANLAN_SHOT) {
     win.webContents.once('did-finish-load', () => {
       setTimeout(async () => {
         try {
+          if (process.env.GUANLAN_PRE) {
+            const r = await win.webContents.executeJavaScript(
+              `(async()=>{ try { ${process.env.GUANLAN_PRE} ; return 'ok'; } catch(e){ return 'ERR:'+e.message; } })()`,
+              true,
+            );
+            console.log('[pre]', r);
+            await new Promise((r2) => setTimeout(r2, 1200));
+          }
+          if (process.env.GUANLAN_VIEW) {
+            const r = await win.webContents.executeJavaScript(
+              `(async()=>{ try { show('${process.env.GUANLAN_VIEW}'); return 'ok'; } catch(e){ return 'ERR:'+e.message; } })()`,
+              true,
+            );
+            console.log('[view]', r);
+            await new Promise((r2) => setTimeout(r2, 1200));
+          }
           const img = await win.webContents.capturePage();
           require('fs').writeFileSync(process.env.GUANLAN_SHOT, img.toPNG());
           console.log('[shot] saved', process.env.GUANLAN_SHOT);
@@ -142,7 +177,7 @@ ipcMain.handle('txn:add-quick', (_e, text) => {
 
   const tx = {
     id: crypto.randomBytes(8).toString('hex'),
-    at: new Date().toISOString(),
+    at: localISO(new Date()),
     kind: parsed.data.kind,
     note: ''.concat(parsed.data.note || ''),
     entries: toEntries(parsed.data),
@@ -156,7 +191,96 @@ ipcMain.handle('txn:add-quick', (_e, text) => {
   return { ok: true, tx: rowOf(tx, store.accounts) };
 });
 
+/** 仅解析，不入账 —— 供「记一笔」表单做即时预览，规则只有一份 */
+ipcMain.handle('txn:parse', (_e, text) => {
+  const r = parseQuick(text, store.accounts);
+  if (!r.ok) return { ok: false, reason: r.reason };
+  return { ok: true, data: r.data };
+});
+
+/**
+ * 结构化记账 —— 「记一笔」表单提交走这里
+ * 金额单位元，主进程统一转成分
+ */
+ipcMain.handle('txn:add', (_e, payload) => {
+  const p = payload || {};
+  const amt = Math.round(Number(p.amount) * 100);
+
+  if (!(amt > 0)) return { ok: false, reason: '金额要大于 0' };
+
+  const kind = p.kind || 'expense';
+  let entries;
+
+  if (kind === 'transfer') {
+    if (!p.fromAccountId || !p.toAccountId) return { ok: false, reason: '缺少转出或转入账户' };
+    if (p.fromAccountId === p.toAccountId) return { ok: false, reason: '转出与转入不能是同一个账户' };
+    entries = [
+      { accountId: p.fromAccountId, amount: -amt },
+      { accountId: p.toAccountId, amount: amt },
+    ];
+  } else if (kind === 'income') {
+    if (!p.accountId || !p.categoryId) return { ok: false, reason: '缺少账户或来源' };
+    entries = [
+      { accountId: p.accountId, amount: amt },
+      { accountId: p.categoryId, amount: -amt },
+    ];
+  } else {
+    if (!p.accountId || !p.categoryId) return { ok: false, reason: '缺少账户或分类' };
+    entries = [
+      { accountId: p.accountId, amount: -amt },
+      { accountId: p.categoryId, amount: amt },
+    ];
+  }
+
+  const today = localISO(new Date()).slice(0, 10);
+  const at = p.date === today ? localISO(new Date()) : dateAt(p.date);
+
+  const tx = {
+    id: crypto.randomBytes(8).toString('hex'),
+    at,
+    kind,
+    note: String(p.note || '').trim() || defaultNote(kind, p, store.accounts),
+    entries,
+    demo: false,
+  };
+
+  const check = ledger.validateTransaction(tx);
+  if (!check.ok) return { ok: false, reason: check.reason };
+
+  store.addTransaction(tx);
+
+  // 顺手把记完之后的净资产带回去，用户立刻能看到变化
+  const balances = ledger.accountBalances(store.transactions);
+  return {
+    ok: true,
+    tx: rowOf(tx, store.accounts),
+    netWorth: ledger.netWorth(store.accounts, balances),
+  };
+});
+
+function defaultNote(kind, p, accounts) {
+  const nameOf = (id) => (accounts.find((a) => a.id === id) || {}).name || '';
+  if (kind === 'transfer') return `${nameOf(p.fromAccountId)} → ${nameOf(p.toAccountId)}`;
+  return nameOf(p.categoryId) || (kind === 'income' ? '收入' : '支出');
+}
+
 ipcMain.handle('txn:delete', (_e, id) => ({ ok: store.deleteTransaction(id) }));
+
+/* ---------- 月度财报 ---------- */
+
+ipcMain.handle('report:get', (_e, { year, month } = {}) => {
+  const now = new Date();
+  const y = Number(year) || now.getFullYear();
+  const m = Number(month) || now.getMonth() + 1;
+  return report.buildMonthlyReport({
+    accounts: store.accounts,
+    transactions: store.transactions,
+    year: y,
+    month: m,
+  });
+});
+
+ipcMain.handle('report:months', () => report.availableMonths(store.transactions));
 
 ipcMain.handle('demo:clear', () => {
   store.clearDemo();
@@ -175,10 +299,7 @@ function seedDemo(s) {
   const mo = d.getMonth();
   const uid = () => crypto.randomBytes(8).toString('hex');
 
-  const iso = (monthsAgo, day, h = 12) => {
-    const dt = new Date(y, mo - monthsAgo, day, h, 0, 0);
-    return dt.toISOString();
-  };
+  const iso = (monthsAgo, day, h = 12) => localISO(new Date(y, mo - monthsAgo, day, h, 0, 0));
 
   const rows = [];
 

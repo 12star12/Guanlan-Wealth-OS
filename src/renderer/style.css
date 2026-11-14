@@ -228,20 +228,6 @@ main{
 .btn:hover{background:#413A31}
 .btn:disabled{opacity:.4;cursor:not-allowed}
 
-/* 报告 */
-.report-grid{
-  display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
-  background:rgba(43,38,32,.12);border:1px solid rgba(43,38,32,.12);
-  margin-bottom:26px;
-}
-.rc{background:var(--paper);padding:20px 18px}
-.rc span{display:block;font-size:11px;letter-spacing:.2em;color:var(--ink-3);margin-bottom:10px}
-.rc b{font-family:var(--mono);font-size:22px;font-weight:400;letter-spacing:-.01em}
-.report-card{
-  border:1px dashed rgba(43,38,32,.22);padding:40px;text-align:center;
-  color:var(--ink-3);font-size:13px;letter-spacing:.16em;line-height:2.2;
-  border-radius:2px;
-}
 
 [hidden]{display:none!important}
 
@@ -250,3 +236,230 @@ main{
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:rgba(43,38,32,.18);border-radius:5px}
 ::-webkit-scrollbar-thumb:hover{background:rgba(43,38,32,.3)}
+
+/* ============================================================
+   记一笔 · 表单
+   ============================================================ */
+
+.form{
+  margin-top:30px;max-width:660px;
+  border-top:1px solid rgba(43,38,32,.13);
+}
+.f-row{
+  display:flex;align-items:center;gap:18px;
+  padding:13px 2px;border-bottom:1px solid rgba(43,38,32,.075);
+}
+.f-row > label{
+  flex:none;width:44px;font-size:12px;letter-spacing:.14em;color:var(--ink-3);
+}
+.f-input{
+  flex:1;min-width:0;
+  font-family:var(--serif);font-size:14px;letter-spacing:.05em;
+  color:var(--ink);background:transparent;
+  border:none;border-bottom:1px solid transparent;
+  padding:5px 2px;outline:none;transition:border-color .15s;
+  appearance:none;-webkit-appearance:none;
+}
+.f-input:hover{border-bottom-color:rgba(43,38,32,.16)}
+.f-input:focus{border-bottom-color:var(--red)}
+select.f-input{
+  cursor:pointer;padding-right:22px;
+  background-image:
+    linear-gradient(45deg,transparent 50%,var(--ink-3) 50%),
+    linear-gradient(135deg,var(--ink-3) 50%,transparent 50%);
+  background-position:calc(100% - 9px) 12px, calc(100% - 4px) 12px;
+  background-size:5px 5px,5px 5px;
+  background-repeat:no-repeat;
+}
+select.f-input option{background:var(--paper);color:var(--ink)}
+.f-date{flex:none;width:150px;font-family:var(--mono);font-size:12.5px}
+.f-date::-webkit-calendar-picker-indicator{opacity:.4;cursor:pointer}
+
+.f-amt{display:flex;align-items:baseline;gap:6px;flex:1;min-width:0}
+.f-amt .cur{font-family:var(--mono);font-size:15px;color:var(--ink-3)}
+.f-amt input{
+  flex:1;min-width:0;font-family:var(--mono);font-size:26px;letter-spacing:0;
+  color:var(--ink);background:transparent;border:none;outline:none;padding:2px 0;
+  border-bottom:1px solid transparent;transition:border-color .15s;
+}
+.f-amt input:focus{border-bottom-color:var(--red)}
+
+/* 分段按钮 */
+.seg{display:flex;gap:1px;background:rgba(43,38,32,.10);border-radius:2px;overflow:hidden}
+.seg button{
+  border:none;background:var(--paper);color:var(--ink-2);
+  font-family:var(--serif);font-size:12.5px;letter-spacing:.1em;
+  padding:7px 16px;transition:background .15s,color .15s;
+}
+.seg button:hover{background:var(--paper-2)}
+.seg button.on{background:var(--ink);color:#F2EAD8}
+.seg-sm button{padding:6px 13px;font-size:12px}
+
+.add-actions{display:flex;align-items:center;gap:20px;margin-top:26px}
+.add-actions .btn{margin-top:0}
+
+.link{
+  background:none;border:none;color:var(--ink-3);
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;
+  text-decoration:underline;text-underline-offset:3px;
+}
+.link:hover{color:var(--red)}
+
+/* 带删除按钮的行 */
+.rows.with-del .row{grid-template-columns:66px 1fr 84px 104px 26px}
+.row .del{
+  width:22px;height:22px;line-height:18px;text-align:center;
+  border:1px solid transparent;border-radius:50%;
+  background:transparent;color:var(--ink-3);font-size:15px;
+  opacity:0;transition:opacity .15s,color .15s,border-color .15s;
+}
+.row:hover .del{opacity:1}
+.row .del:hover{color:var(--red);border-color:rgba(178,58,46,.4)}
+.row.empty{grid-template-columns:1fr;color:var(--ink-3);font-size:13px;padding:18px 4px}
+.chip.muted{color:var(--ink-3);background:transparent;border-style:dashed}
+
+/* ============================================================
+   月度财报
+   ============================================================ */
+
+.rpt-tools{display:flex;align-items:center;gap:6px}
+.rpt-tools span{
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;
+  color:var(--ink-2);min-width:86px;text-align:center;
+}
+.rpt-tools button{
+  font-family:var(--serif);font-size:12px;letter-spacing:.1em;
+  padding:5px 10px;border:1px solid rgba(43,38,32,.18);
+  background:transparent;color:var(--ink-2);border-radius:2px;
+}
+.rpt-tools button:hover:not(:disabled){background:rgba(43,38,32,.05)}
+.rpt-tools button:disabled{opacity:.28;cursor:not-allowed}
+#btn-print{
+  margin-left:10px;background:var(--ink);color:#F2EAD8;
+  border-color:var(--ink);letter-spacing:.2em;
+}
+#btn-print:hover{background:#413A31}
+
+.rpt{
+  background:#FBF7EC;
+  border:1px solid rgba(43,38,32,.14);
+  padding:44px 52px 40px;
+  box-shadow:0 2px 12px -6px rgba(60,45,25,.28);
+  position:relative;
+}
+.rpt::before{
+  content:"";position:absolute;inset:9px;border:1px solid rgba(43,38,32,.08);
+  pointer-events:none;
+}
+
+.rpt-head{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  padding-bottom:20px;border-bottom:2px solid rgba(43,38,32,.7);
+}
+.rpt-brand{font-size:12px;letter-spacing:.5em;color:var(--ink-2);text-indent:.5em}
+.rpt-period{margin-top:12px;font-size:26px;letter-spacing:.2em;color:var(--ink)}
+.rpt-seal{
+  writing-mode:vertical-rl;font-size:10px;letter-spacing:.3em;
+  color:rgba(178,58,46,.8);border:1.5px solid rgba(178,58,46,.55);
+  padding:8px 5px;border-radius:2px;transform:rotate(1deg);
+}
+
+.rpt-kpis{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  border-bottom:1px solid rgba(43,38,32,.16);margin-bottom:30px;
+}
+.rpt-kpis > div{padding:20px 16px;border-left:1px solid rgba(43,38,32,.10)}
+.rpt-kpis > div:first-child{border-left:none;padding-left:0}
+.rpt-kpis span{display:block;font-size:10px;letter-spacing:.2em;color:var(--ink-3);margin-bottom:10px}
+.rpt-kpis b{display:block;font-family:var(--mono);font-size:20px;font-weight:400;letter-spacing:-.02em}
+.rpt-kpis em{display:block;margin-top:7px;font-style:normal;font-size:10.5px;color:var(--ink-3);letter-spacing:.04em}
+
+.rpt-sec{margin-bottom:30px}
+.rpt-sec h3{
+  font-size:12px;font-weight:400;letter-spacing:.3em;color:var(--ink-2);
+  margin-bottom:14px;display:flex;align-items:center;gap:10px;
+}
+.rpt-sec h3 i{
+  font-style:normal;font-family:var(--mono);font-size:9.5px;
+  color:var(--red);border:1px solid rgba(178,58,46,.45);
+  padding:2px 5px;border-radius:1px;letter-spacing:0;
+}
+
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:start}
+
+table.led{width:100%;border-collapse:collapse;font-size:13px}
+table.led th{
+  text-align:left;font-weight:400;font-size:10px;letter-spacing:.18em;
+  color:var(--ink-3);padding:0 0 8px;border-bottom:1px solid rgba(43,38,32,.22);
+}
+table.led td{padding:8px 0;border-bottom:1px dotted rgba(43,38,32,.16);color:var(--ink-2)}
+table.led th.n{text-align:right}
+table.led td.n{text-align:right;font-family:var(--mono);font-size:12.5px;color:var(--ink)}
+table.led td .sub{font-style:normal;font-size:9px;color:var(--ink-3);margin-left:6px;letter-spacing:.06em}
+table.led td.nil{color:var(--ink-3);font-size:12px}
+table.led td.day{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);width:60px}
+table.led tfoot .total td{
+  border-bottom:1.5px solid rgba(43,38,32,.5);border-top:1px solid rgba(43,38,32,.5);
+  padding-top:9px;color:var(--ink);
+}
+table.led.grand{margin-top:14px}
+table.led.grand td{
+  border-bottom:none;border-top:2px double rgba(43,38,32,.55);
+  padding-top:12px;font-size:14px;letter-spacing:.06em;color:var(--ink);
+}
+table.led.grand td.n{font-size:18px}
+table.led.small{margin-top:22px}
+
+.bars{display:flex;flex-direction:column;gap:11px}
+.bar-row{display:grid;grid-template-columns:44px 1fr 88px 42px;align-items:center;gap:14px;font-size:12.5px}
+.bar-row .bl{color:var(--ink-2);letter-spacing:.1em}
+.bar{height:9px;background:rgba(43,38,32,.07);border-radius:1px;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(to right,rgba(100,121,79,.55),rgba(100,121,79,.85))}
+.bar-row:nth-child(2) .bar i{background:linear-gradient(to right,rgba(185,146,74,.5),rgba(185,146,74,.85))}
+.bar-row:nth-child(3) .bar i{background:linear-gradient(to right,rgba(178,58,46,.38),rgba(178,58,46,.7))}
+.bar-row:nth-child(4) .bar i{background:linear-gradient(to right,rgba(140,132,119,.4),rgba(140,132,119,.7))}
+.bar-row .bn{font-family:var(--mono);font-size:12px;text-align:right;color:var(--ink)}
+.bar-row .bp{font-family:var(--mono);font-size:11px;text-align:right;color:var(--ink-3)}
+
+.d-up{color:var(--green);font-family:var(--mono);font-size:11.5px}
+.d-down{color:var(--red);font-family:var(--mono);font-size:11.5px}
+.d-flat{color:var(--ink-3);font-size:11px;letter-spacing:.1em}
+
+.narration{
+  font-size:13.5px;line-height:2.1;letter-spacing:.05em;color:var(--ink-2);
+  padding:18px 22px;background:rgba(43,38,32,.028);
+  border-left:2px solid rgba(178,58,46,.5);
+}
+p.nil{font-size:12.5px;color:var(--ink-3);letter-spacing:.06em}
+
+.rpt-foot{
+  display:flex;justify-content:space-between;
+  margin-top:36px;padding-top:16px;border-top:1px solid rgba(43,38,32,.16);
+  font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--ink-3);
+}
+
+/* ============================================================
+   打印
+   ============================================================ */
+
+@media print{
+  @page{margin:14mm}
+  html,body{height:auto;background:#fff}
+  body{display:block;padding:0}
+  .sidebar,.notice,.rpt-tools{display:none!important}
+  .book{
+    display:block;max-width:none;min-height:0;
+    box-shadow:none;border-radius:0;background:#fff;
+  }
+  .book::after{display:none}
+  main{padding:0;background-image:none}
+  .head{border-bottom:none;padding-bottom:0;margin-bottom:18px}
+  .head .sub{display:none}
+  .rpt{border:none;box-shadow:none;padding:0;background:#fff}
+  .rpt::before{display:none}
+  .rpt-sec{break-inside:avoid}
+  .two-col{break-inside:avoid}
+}
+
+/* 「刚记下的」区块与按钮拉开距离 */
+#recent-add-title{margin-top:34px}

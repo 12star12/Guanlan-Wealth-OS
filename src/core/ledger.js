@@ -110,6 +110,9 @@ function cashflow(transactions, accounts, from, to) {
 
   for (const tx of transactions) {
     if (!inRange(tx.at, from, to)) continue;
+    // 期初余额不是本期赚到的钱。它的对方科目记在收入账户上只是为了配平，
+    // 若不做这个排除，开账那个月会被算成「收入 3 万」，报表立刻失真。
+    if (tx.kind === 'opening') continue;
     for (const e of tx.entries || []) {
       const t = typeOf.get(e.accountId);
       if (t === T.INCOME) inflow -= e.amount;   // 收入账户记负数，取反

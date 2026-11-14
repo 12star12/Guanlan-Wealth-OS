@@ -23,7 +23,7 @@
       <a class="on" data-view="ledger"><span class="dot"></span>账簿</a>
       <a data-view="add"><span class="dot"></span>记一笔</a>
       <a data-view="list"><span class="dot"></span>流水</a>
-      <a data-view="report"><span class="dot"></span>报告</a>
+      <a data-view="report"><span class="dot"></span>财报</a>
     </nav>
 
     <div class="side-foot">
@@ -97,29 +97,86 @@
       <div class="head">
         <div>
           <h1>记一笔</h1>
-          <div class="sub">写一句话就行</div>
+          <div class="sub">写一句话，或者直接填</div>
         </div>
         <div class="date" id="add-time"></div>
       </div>
 
       <div class="add-wrap">
-        <input class="nl-input" id="nl-input" autocomplete="off"
-               placeholder="午饭25" autofocus>
+        <input class="nl-input" id="nl-input" autocomplete="off" placeholder="午饭25">
 
         <div class="parse" id="parse-row">
           <span class="chip k">解 析</span>
         </div>
 
-        <div class="msg" id="msg"></div>
+        <div class="form" id="add-form">
 
-        <div class="hint">
-          <code>午饭25</code>　记 25 元餐饮支出<br>
-          <code>工资8500</code>　记收入，自动归入「工资」<br>
-          <code>买书89</code>　归入「成长」，不计入生活消费<br>
-          <code>转500到支付宝</code>　转账，不影响收支
+          <div class="f-row">
+            <label>类型</label>
+            <div class="seg" id="seg-kind">
+              <button type="button" data-kind="expense" class="on">支出</button>
+              <button type="button" data-kind="income">收入</button>
+              <button type="button" data-kind="transfer">转账</button>
+            </div>
+          </div>
+
+          <div class="f-row">
+            <label>金额</label>
+            <div class="f-amt">
+              <span class="cur">¥</span>
+              <input id="f-amount" inputmode="decimal" autocomplete="off">
+            </div>
+          </div>
+
+          <div class="f-row" id="row-cat">
+            <label>分类</label>
+            <select id="f-cat" class="f-input"></select>
+          </div>
+
+          <div class="f-row" id="row-acc">
+            <label id="lbl-acc">账户</label>
+            <select id="f-acc" class="f-input"></select>
+          </div>
+
+          <div class="f-row" id="row-to">
+            <label>转入</label>
+            <select id="f-to" class="f-input"></select>
+          </div>
+
+          <div class="f-row">
+            <label>日期</label>
+            <div class="seg seg-sm" id="seg-date">
+              <button type="button" data-d="0" class="on">今天</button>
+              <button type="button" data-d="1">昨天</button>
+              <button type="button" data-d="2">前天</button>
+            </div>
+            <input type="date" id="f-date" class="f-input f-date">
+          </div>
+
+          <div class="f-row">
+            <label>备注</label>
+            <input id="f-note" class="f-input" autocomplete="off" placeholder="可以不填">
+          </div>
+
         </div>
 
-        <button class="btn" id="btn-add">记 下</button>
+        <div class="add-actions">
+          <button class="btn" id="btn-add">记 下</button>
+          <span class="msg" id="msg"></span>
+        </div>
+
+        <div class="sec-title" id="recent-add-title" hidden>
+          <h2>刚 记 下 的</h2>
+          <div class="line"></div>
+          <button class="link" id="btn-goto-ledger">回账簿</button>
+        </div>
+        <div class="rows" id="recent-add" hidden></div>
+
+        <div class="hint">
+          <code>午饭25</code>记 25 元餐饮　<code>工资8500</code>记工资收入<br>
+          <code>买书89</code>归入成长　<code>还信用卡600</code>转账，不影响收支<br>
+          输入框里打回车即可提交，记完留在本页，可以接着记下一笔。
+        </div>
       </div>
     </section>
 
@@ -135,29 +192,21 @@
       <div class="rows" id="all-rows"></div>
     </section>
 
-    <!-- 报告 -->
+    <!-- 财报 -->
     <section id="view-report" hidden>
       <div class="head">
         <div>
-          <h1>本月小结</h1>
+          <h1>月度财报</h1>
           <div class="sub" id="report-sub"></div>
         </div>
-        <div class="date"></div>
+        <div class="rpt-tools">
+          <button id="m-prev" title="上个月">‹</button>
+          <span id="m-label">—</span>
+          <button id="m-next" title="下个月">›</button>
+          <button id="btn-print">打 印</button>
+        </div>
       </div>
-
-      <div class="report-grid">
-        <div class="rc"><span>收 入</span><b id="r-in">—</b></div>
-        <div class="rc"><span>支 出</span><b id="r-out">—</b></div>
-        <div class="rc"><span>结 余</span><b id="r-net">—</b></div>
-        <div class="rc"><span>储 蓄 率</span><b id="r-rate">—</b></div>
-      </div>
-
-      <div class="report-card">
-        月度财报生成功能开发中<br>
-        <span style="font-size:11px;letter-spacing:.1em">
-          之后这里会是一份可以打印的完整财报
-        </span>
-      </div>
+      <div id="report-body"></div>
     </section>
 
   </main>

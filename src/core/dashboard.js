@@ -27,6 +27,26 @@ function rowOf(tx, accounts) {
   const typeOf = new Map(accounts.map((a) => [a.id, a.type]));
   const nameOf = new Map(accounts.map((a) => [a.id, a.name]));
 
+  // 期初余额不是一笔收支，显示为「期初」，金额取当时搬进来的资产合计
+  if (tx.kind === 'opening') {
+    let assets = 0;
+    for (const e of tx.entries || []) {
+      if (typeOf.get(e.accountId) === 'asset') assets += e.amount;
+    }
+    return {
+      id: tx.id,
+      at: tx.at,
+      day: tx.at.slice(5, 10).replace('-', '·'),
+      title: tx.note || '期初余额',
+      tag: '期初',
+      cls: 'life',
+      kind: 'opening',
+      amount: assets,
+      isIncome: false,
+      demo: !!tx.demo,
+    };
+  }
+
   let amount = 0;
   let tag = '转账';
   let cls = 'life';
