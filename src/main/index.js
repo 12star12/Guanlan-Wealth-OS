@@ -17,6 +17,9 @@ let win = null;
 // 截图调试时关掉 GPU 合成，避免抓到过时的画面帧
 if (process.env.GUANLAN_SHOT) app.disableHardwareAcceleration();
 
+// 让 Windows 把任务栏图标归到这个 AppID 下，而不是算作 electron.exe
+if (process.platform === 'win32') app.setAppUserModelId('com.guanlan.wealthos');
+
 /** 本地时间戳（YYYY-MM-DDTHH:mm:ss，不带时区）
  *  统一用本地时间，避免 UTC 把凌晨记的账算到前一天 */
 function localISO(d) {
@@ -43,6 +46,8 @@ function createWindow() {
     minHeight: 720,
     backgroundColor: '#DDD4C0',
     title: '观澜',
+    // 任务栏与窗口左上角的图标。不设的话跑的是 electron.exe 自带的原子图标
+    icon: path.join(__dirname, '../../assets/guanlan.ico'),
     show: false,
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),

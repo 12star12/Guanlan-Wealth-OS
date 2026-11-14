@@ -9,3 +9,5 @@ shot-*.png
 r-*.png
 t.png
 shots/
+assets/icon-[0-9]*.png
+!assets/icon-256.png
