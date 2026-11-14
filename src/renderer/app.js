@@ -194,14 +194,44 @@ function assetRow(item) {
   name.title = '点一下改名';
   name.addEventListener('click', () => editName(row, item));
 
-  const bal = document.createElement('span');
-  bal.className = 'a-bal';
-  // 负债单独标一个「欠」，不加正负号 —— 点开编辑时输入的是「欠多少」
-  bal.innerHTML = item.type === 'liability'
-    ? `<i>欠</i>${num(item.balance)}`
-    : num(item.balance);
-  bal.title = '点一下改余额';
-  bal.addEventListener('click', () => editBalance(row, item));
+  // 余额是一个常驻输入框，不是「点出来」的 —— 看不见入口等于不能改
+  const field = document.createElement('input');
+  field.className = 'a-field';
+  field.inputMode = 'decimal';
+  field.autocomplete = 'off';
+  field.value = item.type === 'liability' ? `欠 ${num(item.balance)}` : num(item.balance);
+  field.title = '直接改，回车或点别处存下';
+  field.addEventListener('focus', () => {
+    field.value = String(item.balance / 100);
+    field.select();
+  });
+  field.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); field.blur(); }
+    else if (e.key === 'Escape') { e.preventDefault(); field.value = item.type === 'liability' ? `欠 ${num(item.balance)}` : num(item.balance); field.blur(); }
+  });
+  field.addEventListener('blur', async () => {
+    const raw = String(field.value).replace(/[,，\s¥￥欠]/g, '');
+    const yuan = Number(raw);
+
+    if (raw === '' || !Number.isFinite(yuan)) {
+      field.value = item.type === 'liability' ? `欠 ${num(item.balance)}` : num(item.balance);
+      aMsg('没看懂这个数');
+      return;
+    }
+
+    if (Math.round(yuan * 100) === item.balance) {
+      field.value = item.type === 'liability' ? `欠 ${num(item.balance)}` : num(item.balance);
+      return;
+    }
+
+    const r = await window.api.setBalance({ id: item.id, amount: yuan });
+    if (!r.ok) aMsg(r.reason || '没改成');
+
+    const view = await loadAssets();
+    await loadDashboard();
+    // 重渲染之后焦点会丢，这里不抢焦点，等用户自己点下一个
+    return view;
+  });
 
   const del = document.createElement('button');
   del.className = 'a-del';
@@ -209,49 +239,8 @@ function assetRow(item) {
   del.title = '移除';
   del.addEventListener('click', () => dropAccount(item));
 
-  row.append(name, bal, del);
+  row.append(name, field, del);
   return row;
-}
-
-function editBalance(row, item) {
-  const cell = row.querySelector('.a-bal');
-  if (!cell || cell.querySelector('input')) return;
-
-  const input = document.createElement('input');
-  input.className = 'a-input';
-  input.inputMode = 'decimal';
-  input.value = String(item.balance / 100);
-  cell.textContent = '';
-  cell.appendChild(input);
-  input.focus();
-  input.select();
-
-  let settled = false;
-  const finish = async (save) => {
-    if (settled) return;
-    settled = true;
-
-    const raw = String(input.value).replace(/[,，\s¥￥]/g, '');
-    const yuan = Number(raw);
-
-    if (!save || raw === '' || !Number.isFinite(yuan)) {
-      await loadAssets();
-      if (save) aMsg('没看懂这个数');
-      return;
-    }
-
-    const r = await window.api.setBalance({ id: item.id, amount: yuan });
-    if (!r.ok) aMsg(r.reason || '没改成');
-
-    await loadAssets();
-    await loadDashboard();
-  };
-
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); finish(true); }
-    else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
-  });
-  input.addEventListener('blur', () => finish(true));
 }
 
 function editName(row, item) {

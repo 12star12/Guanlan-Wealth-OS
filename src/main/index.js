@@ -73,6 +73,8 @@ function createWindow() {
               true,
             );
             console.log('[pre]', r);
+            // 截图通道偶尔会拿到旧帧，所以让页面把断言写进标题，从 stdout 读更可信
+            console.log('[title]', win.getTitle());
             await new Promise((r2) => setTimeout(r2, 1200));
           }
           if (process.env.GUANLAN_VIEW) {

@@ -8,7 +8,7 @@
   "private": true,
   "scripts": {
     "start": "electron .",
-    "test": "node --test src/test/"
+    "test": "node --test \"src/test/*.test.js\""
   },
   "devDependencies": {
     "electron": "^33.0.0"

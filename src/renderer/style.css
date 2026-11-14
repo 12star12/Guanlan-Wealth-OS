@@ -681,3 +681,26 @@ p.nil{font-size:12.5px;color:var(--ink-3);letter-spacing:.06em}
   background:rgba(100,121,79,.06);
   border-left:2px solid rgba(100,121,79,.5);
 }
+
+/* 余额：常驻输入框，虚线就是「这里能填」的暗示 */
+.a-field{
+  width:172px;padding:5px 6px;text-align:right;
+  font-family:var(--mono);font-size:15px;color:var(--ink);
+  background:transparent;border:none;
+  border-bottom:1px dashed rgba(43,38,32,.30);
+  outline:none;transition:border-color .12s,background .12s;
+  -moz-appearance:textfield;
+}
+.a-field::-webkit-outer-spin-button,
+.a-field::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.a-field:hover{border-bottom-color:rgba(43,38,32,.55)}
+.a-field:focus{
+  border-bottom:1px solid var(--red);
+  background:rgba(178,58,46,.05);
+}
+
+/* 侧栏版本号：换代码后没重启，一眼就能看出来 */
+.ver{
+  margin-top:14px;font-family:var(--mono);font-size:9px;
+  letter-spacing:.16em;color:rgba(242,234,216,.32);
+}
