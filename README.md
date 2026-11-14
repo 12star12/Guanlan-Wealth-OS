@@ -66,23 +66,38 @@
 
 ## 快速开始
 
+项目在本机的位置：**`D:\Guanlan-Wealth-OS`**
+
+三种启动方式，任选其一：
+
+1. **桌面快捷方式「观澜」**——双击即可。图标是墨底红框的「观」字。
+2. **`启动.bat`**——双击运行。它会先清掉 `ELECTRON_RUN_AS_NODE` 再启动，用于兜底。
+3. **命令行**：
+
 ```bash
 npm install
 npm start
 ```
 
 > 如果启动报 `Cannot read properties of undefined (reading 'whenReady')`，
-> 说明环境里存在 `ELECTRON_RUN_AS_NODE` 变量，先 `unset ELECTRON_RUN_AS_NODE` 再启动。
+> 说明环境里存在 `ELECTRON_RUN_AS_NODE`（某些开发工具会全局设置它），
+> 用 `启动.bat` 启动即可，或先 `set ELECTRON_RUN_AS_NODE=` 再运行。
 
-数据文件位置：用户目录下的 `guanlan-wealth-os/guanlan.json`
+数据文件位置：`C:\Users\<你>\AppData\Roaming\guanlan-wealth-os\guanlan.json`
 （菜单「文件 → 打开数据目录」可直接打开）。
 
 首次启动会放一份示例数据，菜单「文件 → 清空示例数据」可一键清除。
 
+### 重建图标与快捷方式
+
+换电脑、换路径之后，跑一次 `tools/make-shortcut.ps1` 即可重建。
+它会生成 `assets/guanlan.ico`（16/24/32/48/64/128/256 七种尺寸），
+并在桌面创建「观澜.lnk」，指向 `node_modules/electron/dist/electron.exe`。
+
 ## 测试
 
 ```bash
-node --test src/test/ledger.test.js src/test/dashboard.test.js src/test/report.test.js
+node --test src/test/ledger.test.js src/test/dashboard.test.js src/test/report.test.js src/test/feedback.test.js
 ```
 
 ## 技术路线
