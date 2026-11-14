@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; script-src 'self'">
+<title>观澜</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="book">
+
+  <!-- 侧栏 -->
+  <aside class="sidebar">
+    <div class="brand">
+      观澜
+      <small>GUANLAN · LEDGER</small>
+      <div class="rule"></div>
+    </div>
+
+    <nav>
+      <a class="on" data-view="ledger"><span class="dot"></span>账簿</a>
+      <a data-view="add"><span class="dot"></span>记一笔</a>
+      <a data-view="list"><span class="dot"></span>流水</a>
+      <a data-view="report"><span class="dot"></span>报告</a>
+    </nav>
+
+    <div class="side-foot">
+      <div class="seal" id="seal">丙午年拾月</div>
+    </div>
+  </aside>
+
+  <!-- 主区 -->
+  <main>
+
+    <!-- 示例数据提示 -->
+    <div class="notice" id="notice" hidden>
+      <span>当前显示的是示例数据，方便你先看看样子。</span>
+      <button id="btn-clear-demo">清空示例，开始记我自己的账</button>
+    </div>
+
+    <!-- 账簿 -->
+    <section id="view-ledger">
+      <div class="head">
+        <div>
+          <h1>个人账簿</h1>
+          <div class="sub" id="ledger-sub">本月</div>
+        </div>
+        <div class="date" id="today"></div>
+      </div>
+
+      <div class="trio">
+        <div class="cell">
+          <div class="k">净 资 产</div>
+          <div class="v" id="networth">—</div>
+          <div class="n" id="networth-note"></div>
+        </div>
+        <div class="cell">
+          <div class="k">生 存 月 数</div>
+          <div class="v" id="runway">—</div>
+          <div class="n">流动资产 ÷ 月支出</div>
+        </div>
+        <div class="cell">
+          <div class="k">负 债 率</div>
+          <div class="v" id="debt">—</div>
+          <div class="n" id="debt-note"></div>
+        </div>
+      </div>
+
+      <div class="quote" id="quote" hidden>
+        <svg class="art" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.4"
+             stroke-linecap="round" stroke-linejoin="round" style="color:#8C8477">
+          <path d="M32 54V26"/>
+          <path d="M32 34c0-9-7-13-15-13 0 9 6 13 15 13z"/>
+          <path d="M32 26c0-9 7-13 15-13 0 9-6 13-15 13z"/>
+          <path d="M22 54h20"/>
+          <path d="M18 48c4 2 10 3 14 3s10-1 14-3"/>
+        </svg>
+        <div class="body">
+          <div class="t" id="q-text"></div>
+          <div class="s" id="q-src"></div>
+        </div>
+      </div>
+
+      <div class="sec-title">
+        <h2>最 近 记 录</h2>
+        <div class="line"></div>
+        <div class="stamp" id="days-stamp">—</div>
+      </div>
+
+      <div class="rows" id="recent-rows"></div>
+    </section>
+
+    <!-- 记一笔 -->
+    <section id="view-add" hidden>
+      <div class="head">
+        <div>
+          <h1>记一笔</h1>
+          <div class="sub">写一句话就行</div>
+        </div>
+        <div class="date" id="add-time"></div>
+      </div>
+
+      <div class="add-wrap">
+        <input class="nl-input" id="nl-input" autocomplete="off"
+               placeholder="午饭25" autofocus>
+
+        <div class="parse" id="parse-row">
+          <span class="chip k">解 析</span>
+        </div>
+
+        <div class="msg" id="msg"></div>
+
+        <div class="hint">
+          <code>午饭25</code>　记 25 元餐饮支出<br>
+          <code>工资8500</code>　记收入，自动归入「工资」<br>
+          <code>买书89</code>　归入「成长」，不计入生活消费<br>
+          <code>转500到支付宝</code>　转账，不影响收支
+        </div>
+
+        <button class="btn" id="btn-add">记 下</button>
+      </div>
+    </section>
+
+    <!-- 流水 -->
+    <section id="view-list" hidden>
+      <div class="head">
+        <div>
+          <h1>流水</h1>
+          <div class="sub" id="list-sub"></div>
+        </div>
+        <div class="date" id="list-sum"></div>
+      </div>
+      <div class="rows" id="all-rows"></div>
+    </section>
+
+    <!-- 报告 -->
+    <section id="view-report" hidden>
+      <div class="head">
+        <div>
+          <h1>本月小结</h1>
+          <div class="sub" id="report-sub"></div>
+        </div>
+        <div class="date"></div>
+      </div>
+
+      <div class="report-grid">
+        <div class="rc"><span>收 入</span><b id="r-in">—</b></div>
+        <div class="rc"><span>支 出</span><b id="r-out">—</b></div>
+        <div class="rc"><span>结 余</span><b id="r-net">—</b></div>
+        <div class="rc"><span>储 蓄 率</span><b id="r-rate">—</b></div>
+      </div>
+
+      <div class="report-card">
+        月度财报生成功能开发中<br>
+        <span style="font-size:11px;letter-spacing:.1em">
+          之后这里会是一份可以打印的完整财报
+        </span>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

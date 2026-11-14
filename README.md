@@ -21,9 +21,38 @@
 
 ## 当前版本
 
-**v0.1 — 开发中**
+**v0.1 — 可运行的桌面版**
 
 首版只聚焦一件事：**让人能在电脑上坚持记账**。
+
+已经能做的：
+
+- 一句话记账（`午饭25` → 支出 · 餐饮 · ¥25）
+- 复式记账，转账不会算进收支
+- 三个核心数字：净资产 / 生存月数 / 负债率
+- 每日一句（本地库，有出处）
+- 数据存本地，不联网
+
+## 快速开始
+
+```bash
+npm install
+npm start
+```
+
+> 如果启动报 `Cannot read properties of undefined (reading 'whenReady')`，
+> 说明环境里存在 `ELECTRON_RUN_AS_NODE` 变量，先 `unset ELECTRON_RUN_AS_NODE` 再启动。
+
+数据文件位置：用户目录下的 `guanlan-wealth-os/guanlan.json`
+（菜单「文件 → 打开数据目录」可直接打开）。
+
+首次启动会放一份示例数据，菜单「文件 → 清空示例数据」可一键清除。
+
+## 测试
+
+```bash
+node --test src/test/ledger.test.js src/test/dashboard.test.js
+```
 
 ## 技术路线
 

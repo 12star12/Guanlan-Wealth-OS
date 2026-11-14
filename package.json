@@ -1,0 +1,16 @@
+{
+  "name": "guanlan-wealth-os",
+  "version": "0.1.0",
+  "description": "观澜 · 个人财富操作系统",
+  "main": "src/main/index.js",
+  "author": "12star12",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test src/test/"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0"
+  }
+}
