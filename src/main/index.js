@@ -47,7 +47,7 @@ function createWindow() {
     backgroundColor: '#DDD4C0',
     title: '观澜',
     // 任务栏与窗口左上角的图标。不设的话跑的是 electron.exe 自带的原子图标
-    icon: path.join(__dirname, '../../assets/guanlan.ico'),
+    icon: path.join(__dirname, '../../assets/guanlan-boat.ico'),
     show: false,
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
