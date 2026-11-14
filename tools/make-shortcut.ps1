@@ -4,7 +4,7 @@ Add-Type -AssemblyName System.Drawing
 $root   = 'D:\Guanlan-Wealth-OS'
 $assets = Join-Path $root 'assets'
 if (-not (Test-Path $assets)) { New-Item -ItemType Directory -Path $assets | Out-Null }
-$icoPath = Join-Path $assets 'guanlan.ico'
+$icoPath = Join-Path $assets 'guanlan-boat.ico'
 
 # 中文用字符码，避免脚本文件编码问题
 $charGuan = [char]0x89C2    # 观

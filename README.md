@@ -91,9 +91,16 @@ npm start
 ### 重建图标与快捷方式
 
 换电脑、换路径之后，跑一次 `tools/make-shortcut.ps1` 即可重建。
-它会生成 `assets/guanlan.ico`（16/24/32/48/64/128/256 七种尺寸），
+它会生成 `assets/guanlan-boat.ico`（16/24/32/48/64/128/256 七种尺寸），
 每档单独渲染而非缩放大图，小尺寸才不糊；
 并在桌面创建「观澜.lnk」，指向 `node_modules/electron/dist/electron.exe`。
+
+换了图标但桌面还显示旧图？那是 Explorer 的图标缓存。
+跑一次下面的脚本（它会重启资源管理器，图标缓存重建后就正常了）：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\refresh-icon-cache.ps1
+```
 
 ## 测试
 
