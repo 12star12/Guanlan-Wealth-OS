@@ -11,7 +11,6 @@
 - 财富成长阶段
 - 风险情况
 
-
 ## 项目目标
 
 从个人财富管理工具逐步发展为：
@@ -20,38 +19,68 @@
 - 金融教育工具
 - 一人公司经营分析平台
 
-
 ## 当前版本
 
-v0.1
+**v0.1 — 开发中**
 
-目标：
-
-完成个人资产管理、数据分析和可视化功能。
-
+首版只聚焦一件事：**让人能在电脑上坚持记账**。
 
 ## 技术路线
 
-Android:
-- Kotlin
+桌面应用（Windows 优先）：
 
-Data Analysis:
-- Python
-- NumPy
-- Pandas
-- Matplotlib
+- Electron（主进程 + 渲染进程）
+- 原生 ES Module（零构建，改完刷新即生效）
+- SQLite（better-sqlite3，本地文件数据库）
+- ECharts（图表）
+- 复式记账（double-entry bookkeeping）
 
-Database:
-- SQLite
+AI：
 
+- 智谱 GLM-4-Flash（永久免费，兼容 OpenAI API）
+- 每周财务分析 / 每季度成长与市场价值评估 / 每月财报
+
+> 早期版本曾规划 Android(Kotlin) + MySQL，已弃用。
+> 改为桌面端本地优先，原因见 [docs/architecture.md](docs/architecture.md)。
+
+## 目录结构
+
+```
+├── docs/            设计与技术文档
+├── src/             应用源码（待建）
+│   ├── main/        Electron 主进程
+│   ├── renderer/    界面
+│   └── core/        复式记账核心（纯函数，可测试）
+└── README.md
+```
 
 ## Development Plan
 
-Phase 1:
-课程项目
+| 阶段 | 内容 |
+|---|---|
+| Phase 1 | 课程项目 — 复式记账 + 财务成绩单 |
+| Phase 2 | 毕业设计 — 规则引擎、实验验证 |
+| Phase 3 | 产品化探索 |
 
-Phase 2:
-毕业设计
+## 三条原则
 
-Phase 3:
-产品化探索
+**温和，但不模糊。**
+
+不因消费产生羞耻，不因资产下降否定用户，不做排名与比较。
+但每个风险提示必须带具体数字和具体动作。
+
+**数字必须可追溯。**
+
+所有财务结论由确定性代码计算，AI 只负责解释，不负责计算。
+
+**只增不减的才是成长。**
+
+会波动的指标会制造焦虑。成长类指标必须单调递增。
+
+## 文档
+
+- [产品设计](docs/product_zh.md)
+- [V1 范围](docs/requirements.md)
+- [系统架构](docs/architecture.md)
+- [数据库设计](docs/database.md)
+- [开发指南](docs/development.md)
