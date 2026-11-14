@@ -77,6 +77,7 @@ function lunarSeal() {
 const navLinks = Array.from(document.querySelectorAll('nav a'));
 const views = {
   ledger: $('view-ledger'),
+  assets: $('view-assets'),
   add: $('view-add'),
   list: $('view-list'),
   report: $('view-report'),
@@ -86,12 +87,18 @@ function show(view) {
   navLinks.forEach((a) => a.classList.toggle('on', a.dataset.view === view));
   Object.entries(views).forEach(([k, el]) => { el.hidden = k !== view; });
   window.scrollTo(0, 0);
+  if (view === 'assets') loadAssets();
   if (view === 'list') loadList();
   if (view === 'add') setTimeout(() => $('nl-input').focus(), 30);
   if (view === 'report') loadReport();
 }
 
 navLinks.forEach((a) => a.addEventListener('click', () => show(a.dataset.view)));
+
+// 任何带 data-goto 的元素都能跳视图，例如首页的净资产
+document.querySelectorAll('[data-goto]').forEach((el) => {
+  el.addEventListener('click', () => show(el.dataset.goto));
+});
 
 /* ---------------- 账户 ---------------- */
 
@@ -112,6 +119,220 @@ function fillSelect(sel, list, value) {
   if (list.some((a) => a.id === keep)) sel.value = keep;
   else if (list.length) sel.value = list[0].id;
 }
+
+/* ---------------- 资产 ---------------- */
+
+/** 数字：不带货币符号，负号用减号，整数不显示小数 */
+function num(fen) {
+  const y = Math.abs(fen || 0) / 100;
+  const s = Number.isInteger(y)
+    ? y.toLocaleString('zh-CN')
+    : y.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return (fen < 0 ? '−' : '') + s;
+}
+
+function aMsg(text) {
+  const el = $('a-msg');
+  el.textContent = text || '';
+  clearTimeout(aMsg.timer);
+  if (text) aMsg.timer = setTimeout(() => { el.textContent = ''; }, 2600);
+}
+
+async function loadAssets() {
+  const v = await window.api.getAssets();
+  renderAssets(v);
+  return v;
+}
+
+/** 账户变了之后，记账页的下拉也要跟着变 */
+async function refreshAccounts() {
+  ACCOUNTS = await window.api.listAccounts();
+  syncForm();
+}
+
+function renderAssets(v) {
+  const box = $('a-list');
+  box.innerHTML = '';
+
+  const group = (title, list, total) => {
+    const g = document.createElement('div');
+    g.className = 'a-group';
+
+    const head = document.createElement('div');
+    head.className = 'a-head';
+    head.innerHTML = `<span>${title}</span><span class="a-sum">${num(total)}</span>`;
+    g.appendChild(head);
+
+    if (!list.length) {
+      const e = document.createElement('div');
+      e.className = 'a-empty';
+      e.textContent = '还没有';
+      g.appendChild(e);
+    }
+
+    list.forEach((item) => g.appendChild(assetRow(item)));
+    box.appendChild(g);
+  };
+
+  group('资 产', v.assets, v.totalAssets);
+  group('负 债', v.liabilities, v.totalLiabilities);
+
+  // 全零 = 还没填过，给一句提示；填过之后永远不再出现
+  $('a-firstrun').hidden = !(v.totalAssets === 0 && v.totalLiabilities === 0);
+
+  $('a-net').textContent = '¥' + num(v.netWorth);
+}
+
+function assetRow(item) {
+  const row = document.createElement('div');
+  row.className = 'a-row';
+  row.dataset.id = item.id;
+
+  const name = document.createElement('span');
+  name.className = 'a-name';
+  name.textContent = item.name;
+  name.title = '点一下改名';
+  name.addEventListener('click', () => editName(row, item));
+
+  const bal = document.createElement('span');
+  bal.className = 'a-bal';
+  // 负债单独标一个「欠」，不加正负号 —— 点开编辑时输入的是「欠多少」
+  bal.innerHTML = item.type === 'liability'
+    ? `<i>欠</i>${num(item.balance)}`
+    : num(item.balance);
+  bal.title = '点一下改余额';
+  bal.addEventListener('click', () => editBalance(row, item));
+
+  const del = document.createElement('button');
+  del.className = 'a-del';
+  del.textContent = '×';
+  del.title = '移除';
+  del.addEventListener('click', () => dropAccount(item));
+
+  row.append(name, bal, del);
+  return row;
+}
+
+function editBalance(row, item) {
+  const cell = row.querySelector('.a-bal');
+  if (!cell || cell.querySelector('input')) return;
+
+  const input = document.createElement('input');
+  input.className = 'a-input';
+  input.inputMode = 'decimal';
+  input.value = String(item.balance / 100);
+  cell.textContent = '';
+  cell.appendChild(input);
+  input.focus();
+  input.select();
+
+  let settled = false;
+  const finish = async (save) => {
+    if (settled) return;
+    settled = true;
+
+    const raw = String(input.value).replace(/[,，\s¥￥]/g, '');
+    const yuan = Number(raw);
+
+    if (!save || raw === '' || !Number.isFinite(yuan)) {
+      await loadAssets();
+      if (save) aMsg('没看懂这个数');
+      return;
+    }
+
+    const r = await window.api.setBalance({ id: item.id, amount: yuan });
+    if (!r.ok) aMsg(r.reason || '没改成');
+
+    await loadAssets();
+    await loadDashboard();
+  };
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+    else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+  });
+  input.addEventListener('blur', () => finish(true));
+}
+
+function editName(row, item) {
+  const cell = row.querySelector('.a-name');
+  if (!cell || cell.querySelector('input')) return;
+
+  const input = document.createElement('input');
+  input.className = 'a-input a-input-name';
+  input.value = item.name;
+  cell.textContent = '';
+  cell.appendChild(input);
+  input.focus();
+  input.select();
+
+  let settled = false;
+  const finish = async (save) => {
+    if (settled) return;
+    settled = true;
+
+    const name = input.value.trim();
+    if (!save || !name || name === item.name) { await loadAssets(); return; }
+
+    const r = await window.api.renameAccount({ id: item.id, name });
+    if (!r.ok) aMsg(r.reason || '没改成');
+
+    await refreshAccounts();
+    await loadAssets();
+  };
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+    else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+  });
+  input.addEventListener('blur', () => finish(true));
+}
+
+async function dropAccount(item) {
+  const ok = confirm(`移除「${item.name}」？\n\n如果这个账户已经有记录，只会隐藏起来，历史账目不动。`);
+  if (!ok) return;
+
+  const r = await window.api.removeAccount({ id: item.id });
+  if (!r.ok) { aMsg(r.reason || '没移除'); return; }
+
+  aMsg(r.archived ? '已隐藏，历史还在' : '已移除');
+  await refreshAccounts();
+  await loadAssets();
+  await loadDashboard();
+}
+
+$('btn-new').addEventListener('click', () => {
+  const f = $('new-form');
+  f.hidden = !f.hidden;
+  if (!f.hidden) $('new-name').focus();
+});
+
+$('new-type').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  Array.from($('new-type').children).forEach((x) => x.classList.toggle('on', x === b));
+});
+
+async function addAccount() {
+  const name = $('new-name').value.trim();
+  if (!name) { aMsg('名字还没填'); return; }
+
+  const type = document.querySelector('#new-type button.on').dataset.type;
+  const r = await window.api.addAccount({ name, type });
+  if (!r.ok) { aMsg(r.reason || '没加成'); return; }
+
+  $('new-name').value = '';
+  $('new-form').hidden = true;
+  aMsg('加好了，点数字填余额');
+
+  await refreshAccounts();
+  await loadAssets();
+}
+
+$('btn-new-ok').addEventListener('click', addAccount);
+$('new-name').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); addAccount(); }
+});
 
 /* ---------------- 账簿 ---------------- */
 
@@ -175,7 +396,7 @@ function renderRows(container, rows, opts = {}) {
     const el = document.createElement('div');
     el.className = 'row';
 
-    const plain = r.kind === 'transfer' || r.kind === 'opening';
+    const plain = r.kind === 'transfer' || r.kind === 'opening' || r.kind === 'adjust';
     const sign = plain ? '' : (r.isIncome ? '+' : '−');
     el.innerHTML = `
       <div class="d">${esc(r.day)}</div>

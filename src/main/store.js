@@ -33,6 +33,8 @@ class Store {
       if (fs.existsSync(this.filePath)) {
         const raw = fs.readFileSync(this.filePath, 'utf8');
         this.data = JSON.parse(raw);
+        // 老数据补上「资产调整」账户，补了就落盘，别每次开机重补一遍
+        if (ensureAccounts(this.data)) this.save();
       } else {
         this.data = EMPTY();
         this.data.accounts = defaultAccounts();
@@ -82,6 +84,113 @@ class Store {
     this.data.meta.demo = false;
     this.save();
   }
+
+  /* ---------------- 账户 ---------------- */
+
+  accountById(id) {
+    return this.data.accounts.find((a) => a.id === id) || null;
+  }
+
+  /** 新增账户，id 由名字与时间生成，不依赖外部 */
+  addAccount({ name, type }) {
+    const clean = String(name || '').trim();
+    if (!clean) return { ok: false, reason: '账户名不能为空' };
+    if (clean.length > 20) return { ok: false, reason: '名字太长了' };
+    if (type !== 'asset' && type !== 'liability') return { ok: false, reason: '类型不对' };
+
+    const same = this.data.accounts.find(
+      (a) => !a.archived && a.type === type && a.name === clean
+    );
+    if (same) return { ok: false, reason: '已经有一个同名账户了' };
+
+    let id = 'a' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36);
+    while (this.accountById(id)) id += 'x';
+
+    const acc = {
+      id,
+      name: clean,
+      type,
+      subtype: null,
+      isLiquid: type === 'asset',
+      archived: false,
+      createdAt: now(),
+    };
+    this.data.accounts.push(acc);
+    this.save();
+    return { ok: true, account: acc };
+  }
+
+  renameAccount(id, name) {
+    const acc = this.accountById(id);
+    if (!acc) return { ok: false, reason: '账户不存在' };
+    const clean = String(name || '').trim();
+    if (!clean) return { ok: false, reason: '账户名不能为空' };
+    if (clean.length > 20) return { ok: false, reason: '名字太长了' };
+
+    const dup = this.data.accounts.find(
+      (a) => a.id !== id && !a.archived && a.type === acc.type && a.name === clean
+    );
+    if (dup) return { ok: false, reason: '已经有一个同名账户了' };
+
+    acc.name = clean;
+    this.save();
+    return { ok: true, account: acc };
+  }
+
+  /** 账户被分录引用过就不能真删，否则历史账目会指向一个不存在的账户 */
+  hasEntries(accountId) {
+    return this.data.transactions.some(
+      (t) => (t.entries || []).some((e) => e.accountId === accountId)
+    );
+  }
+
+  removeAccount(id) {
+    const acc = this.accountById(id);
+    if (!acc) return { ok: false, reason: '账户不存在' };
+    if (acc.type !== 'asset' && acc.type !== 'liability') {
+      return { ok: false, reason: '这个账户不能删' };
+    }
+
+    // 至少留一个资产账户，否则记账时无处可记
+    const aliveAssets = this.data.accounts.filter(
+      (a) => a.type === 'asset' && !a.archived && a.id !== id
+    );
+    if (acc.type === 'asset' && aliveAssets.length === 0) {
+      return { ok: false, reason: '至少保留一个资产账户' };
+    }
+
+    if (this.hasEntries(id)) {
+      acc.archived = true;
+      this.save();
+      return { ok: true, archived: true, account: acc };
+    }
+
+    this.data.accounts = this.data.accounts.filter((a) => a.id !== id);
+    this.save();
+    return { ok: true, archived: false, account: acc };
+  }
+}
+
+/**
+ * 老数据补齐：早期版本没有「资产调整」账户，
+ * 缺了它就没法把余额改成任意数（差额无处可记）。
+ */
+function ensureAccounts(data) {
+  if (!Array.isArray(data.accounts)) data.accounts = [];
+  const has = (id) => data.accounts.some((a) => a.id === id);
+  if (has('adjust')) return false;
+
+  data.accounts.push({
+    id: 'adjust',
+    name: '资产调整',
+    type: 'equity',
+    subtype: null,
+    system: true,
+    isLiquid: false,
+    archived: false,
+    createdAt: now(),
+  });
+  return true;
 }
 
 /** 默认账户 */
@@ -100,6 +209,8 @@ function defaultAccounts() {
     { id: 'life',   name: '日用',     type: 'expense',   subtype: null,         isLiquid: false, archived: false, createdAt: now(), nature: 'living' },
     { id: 'growth', name: '成长',     type: 'expense',   subtype: null,         isLiquid: false, archived: false, createdAt: now(), nature: 'growth' },
     { id: 'fun',    name: '娱乐',     type: 'expense',   subtype: null,         isLiquid: false, archived: false, createdAt: now(), nature: 'leisure' },
+    // 只用来配平「直接把余额改成某个数」的差额，界面上不出现
+    { id: 'adjust', name: '资产调整', type: 'equity',    subtype: null,         isLiquid: false, archived: false, createdAt: now(), system: true },
   ];
 }
 

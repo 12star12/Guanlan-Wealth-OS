@@ -17,6 +17,13 @@ contextBridge.exposeInMainWorld('api', {
   addTxn: (payload) => ipcRenderer.invoke('txn:add', payload),
   deleteTransaction: (id) => ipcRenderer.invoke('txn:delete', id),
 
+  /* 资产 */
+  getAssets: () => ipcRenderer.invoke('assets:get'),
+  addAccount: (payload) => ipcRenderer.invoke('account:add', payload),
+  renameAccount: (payload) => ipcRenderer.invoke('account:rename', payload),
+  removeAccount: (payload) => ipcRenderer.invoke('account:remove', payload),
+  setBalance: (payload) => ipcRenderer.invoke('account:set-balance', payload),
+
   /* 财报 */
   getReport: (ym) => ipcRenderer.invoke('report:get', ym || {}),
   getReportMonths: () => ipcRenderer.invoke('report:months'),

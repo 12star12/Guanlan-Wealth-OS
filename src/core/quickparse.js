@@ -44,6 +44,19 @@ function parseQuick(text, accounts = []) {
   const raw = String(text || '').trim();
   if (!raw) return { ok: false, reason: '没有内容' };
 
+  // 账户可以被用户改名、隐藏、删除，所以默认账户不能写死 id
+  const firstOf = (type, fallback) =>
+    (accounts.find((a) => a.type === type && !a.archived) || {}).id || fallback;
+  const defaultAsset = firstOf('asset', 'bank');
+  const defaultExpense = firstOf('expense', 'life');
+
+  // 关键词指向的账户：不存在就用它（关键词本身就是常识映射），
+  // 存在但被用户隐藏了才不能用 —— 否则钱会记进一个看不见的账户
+  const usable = (id) => {
+    const a = accounts.find((x) => x.id === id);
+    return !a || !a.archived;
+  };
+
   // 1. 金额：第一个数字（支持小数）
   const m = raw.match(/(\d+(?:\.\d{1,2})?)/);
   if (!m) return { ok: false, reason: '没找到金额' };
@@ -55,9 +68,10 @@ function parseQuick(text, accounts = []) {
 
   // 2. 转账
   if (has(TRANSFER_WORDS)) {
-    const toAcc = ACCOUNT_WORDS.find(a => has(a.words));
-    const from = 'bank';
-    const to = toAcc ? toAcc.id : 'alipay';
+    const toAcc = ACCOUNT_WORDS.find(a => has(a.words) && usable(a.id));
+    const from = defaultAsset;
+    const otherAsset = (accounts.find((a) => a.type === 'asset' && !a.archived && a.id !== from) || {}).id;
+    const to = toAcc ? toAcc.id : (otherAsset || defaultAsset);
     if (from === to) return { ok: false, reason: '转出与转入账户相同' };
     return {
       ok: true,
@@ -73,20 +87,20 @@ function parseQuick(text, accounts = []) {
 
   // 3. 收入还是支出
   let kind = 'expense';
-  let categoryId = 'life';
+  let categoryId = defaultExpense;
 
   if (has(INCOME_WORDS)) {
     kind = 'income';
     categoryId = has(SIDE_WORDS) ? 'side' : 'salary';
   } else {
     // 支出：按关键词找分类，找不到默认日用
-    const hit = RULES.find(r => has(r.words));
-    categoryId = hit ? hit.id : 'life';
+    const hit = RULES.find(r => has(r.words) && usable(r.id));
+    categoryId = hit ? hit.id : defaultExpense;
   }
 
   // 4. 支付账户
-  const accHit = ACCOUNT_WORDS.find(a => has(a.words));
-  const accountId = accHit ? accHit.id : 'bank';
+  const accHit = ACCOUNT_WORDS.find(a => has(a.words) && usable(a.id));
+  const accountId = accHit ? accHit.id : defaultAsset;
 
   return {
     ok: true,

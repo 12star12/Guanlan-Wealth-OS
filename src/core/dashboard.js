@@ -48,6 +48,26 @@ function rowOf(tx, accounts) {
     };
   }
 
+  // 余额调整：不是收支，是一笔校准。金额只取被调整的那个账户
+  if (tx.kind === 'adjust') {
+    const hit = (tx.entries || []).find((e) => {
+      const t = typeOf.get(e.accountId);
+      return t === 'asset' || t === 'liability';
+    });
+    return {
+      id: tx.id,
+      at: tx.at,
+      day: tx.at.slice(5, 10).replace('-', '·'),
+      title: tx.note || '余额调整',
+      tag: '调整',
+      cls: 'life',
+      kind: 'adjust',
+      amount: Math.abs(hit ? hit.amount : 0),
+      isIncome: false,
+      demo: !!tx.demo,
+    };
+  }
+
   let amount = 0;
   let tag = '转账';
   let cls = 'life';

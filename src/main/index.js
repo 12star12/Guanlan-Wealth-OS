@@ -10,6 +10,7 @@ const { parseQuick, toEntries } = require('../core/quickparse');
 const { buildDashboard, rowOf, sortDesc } = require('../core/dashboard');
 const report = require('../core/report');
 const feedback = require('../core/feedback');
+const assets = require('../core/assets');
 
 let store = null;
 let win = null;
@@ -303,6 +304,73 @@ ipcMain.handle('demo:clear', () => {
 });
 
 ipcMain.handle('account:list', () => store.accounts);
+
+/* ---------- 资产：账户增删改 + 直接改余额 ---------- */
+
+/** 资产页需要的全部数据 */
+function assetsView() {
+  const balances = ledger.accountBalances(store.transactions);
+  return assets.summarize(store.accounts, balances);
+}
+
+ipcMain.handle('assets:get', () => assetsView());
+
+ipcMain.handle('account:add', (_e, payload = {}) => {
+  const r = store.addAccount({ name: payload.name, type: payload.type });
+  if (!r.ok) return r;
+  return { ok: true, view: assetsView(), account: r.account };
+});
+
+ipcMain.handle('account:rename', (_e, payload = {}) => {
+  const r = store.renameAccount(payload.id, payload.name);
+  if (!r.ok) return r;
+  return { ok: true, view: assetsView(), account: r.account };
+});
+
+ipcMain.handle('account:remove', (_e, payload = {}) => {
+  const r = store.removeAccount(payload.id);
+  if (!r.ok) return r;
+  return { ok: true, archived: r.archived, view: assetsView() };
+});
+
+/**
+ * 直接把某个账户的余额改成某个数
+ *
+ * 余额本身不存，这里生成一笔「调整」交易，差额进资产调整账户。
+ * 好处：复式记账不破，净资产 / 财报 / 生存月数全部自动跟上，
+ * 而且删掉这笔调整就回到原样，可撤销。
+ */
+ipcMain.handle('account:set-balance', (_e, payload = {}) => {
+  const acc = store.accountById(payload.id);
+  if (!acc) return { ok: false, reason: '账户不存在' };
+  if (acc.type !== 'asset' && acc.type !== 'liability') {
+    return { ok: false, reason: '只能改资产或负债账户' };
+  }
+
+  const yuan = Number(payload.amount);
+  if (!Number.isFinite(yuan)) return { ok: false, reason: '金额不合法' };
+
+  const balances = ledger.accountBalances(store.transactions);
+  const plan = assets.planAdjust({
+    account: acc,
+    balanceFen: balances.get(acc.id) || 0,
+    targetShownFen: Math.round(yuan * 100),
+  });
+  if (!plan.ok) return plan;
+
+  if (plan.tx) {
+    store.addTransaction({
+      id: crypto.randomBytes(8).toString('hex'),
+      at: localISO(new Date()),
+      kind: plan.tx.kind,
+      note: plan.tx.note,
+      entries: plan.tx.entries,
+      demo: false,
+    });
+  }
+
+  return { ok: true, changed: !!plan.tx, view: assetsView() };
+});
 
 /* ============================================================
    示例数据

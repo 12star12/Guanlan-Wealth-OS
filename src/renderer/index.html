@@ -21,6 +21,7 @@
 
     <nav>
       <a class="on" data-view="ledger"><span class="dot"></span>账簿</a>
+      <a data-view="assets"><span class="dot"></span>资产</a>
       <a data-view="add"><span class="dot"></span>记一笔</a>
       <a data-view="list"><span class="dot"></span>流水</a>
       <a data-view="report"><span class="dot"></span>财报</a>
@@ -51,7 +52,7 @@
       </div>
 
       <div class="trio">
-        <div class="cell">
+        <div class="cell linkable" data-goto="assets" title="点一下管理资产">
           <div class="k">净 资 产</div>
           <div class="v" id="networth">—</div>
           <div class="n" id="networth-note"></div>
@@ -95,6 +96,40 @@
       </div>
 
       <div class="rows" id="recent-rows"></div>
+    </section>
+
+    <!-- 资产：账户与余额 -->
+    <section id="view-assets" hidden>
+      <div class="head">
+        <div>
+          <h1>资产</h1>
+          <div class="sub">点数字可以改，回车就存下</div>
+        </div>
+      </div>
+
+      <div class="a-firstrun" id="a-firstrun" hidden>
+        第一次用，先把各账户现在的余额填一遍。以后只要改动的那几个。
+      </div>
+
+      <div class="a-list" id="a-list"></div>
+
+      <div class="a-net">
+        <span class="k">净 资 产</span>
+        <b id="a-net">—</b>
+      </div>
+
+      <div class="a-new">
+        <button class="link" id="btn-new">＋ 添加账户</button>
+        <div class="a-new-form" id="new-form" hidden>
+          <input id="new-name" class="a-new-input" placeholder="账户名，例如 招商银行" autocomplete="off">
+          <div class="seg seg-sm" id="new-type">
+            <button type="button" data-type="asset" class="on">资产</button>
+            <button type="button" data-type="liability">负债</button>
+          </div>
+          <button class="btn-sm" id="btn-new-ok">加</button>
+        </div>
+        <div class="a-msg" id="a-msg"></div>
+      </div>
     </section>
 
     <!-- 记一笔 -->
@@ -189,9 +224,7 @@
         <div class="rows" id="recent-add" hidden></div>
 
         <div class="hint">
-          <code>午饭25</code>记 25 元餐饮　<code>工资8500</code>记工资收入<br>
-          <code>买书89</code>归入成长　<code>还信用卡600</code>转账，不影响收支<br>
-          输入框里打回车即可提交，记完留在本页，可以接着记下一笔。
+          <code>午饭25</code>　<code>工资8500</code>　<code>买书89</code>　<code>还信用卡600</code>　　回车即记下
         </div>
       </div>
     </section>
